@@ -203,10 +203,10 @@ The `inventory-feed-processor` function uses the bucket referenced by the `EXECU
 
 ## Additional progress tracking
 
-Additional progress tracking can be enabled by including the `PROGRESS_TRACKING_WEBHOOK_URL` environment variable in your `.env` file. The additional progress tracking provides more visibility into the process of translating the input X12 EDI document into the custom JSON output shape. The `read-inbound-edi` function records additional details as it processes documents, and it sends this output to the destination webhook URL. You can change the destination for the additional progress tracking by changing the corresponding environment variable (or remove the environment variable completely to disable this additional tracking):
+Additional progress tracking can be enabled by including the `PROGRESS_TRACKING_WEBHOOK_URL` environment variable in your `.env` file. The additional progress tracking provides more visibility into the process of processing the inventory feed. The `inventory-feed-processor` function records additional details as it processes files, and it sends this output to the destination webhook URL. You can change the destination for the additional progress tracking by changing the corresponding environment variable (or remove the environment variable completely to disable this additional tracking):
 
   ```
   PROGRESS_TRACKING_WEBHOOK_URL=https://webhook.site/<YOUR_UNIQUE_ID>
   ```
 
-Note: after updating (or removing) this environment variable, you will need to also update (or remove) the environment variable from the deployed `read-inbound-edi` function. You can do this via the [Functions UI](https://www.stedi.com/terminal/functions/read-inbound-edi), or by re-running `npm run deploy`.
+Note: after updating (or removing) this environment variable, you will need to also update (or remove) the environment variable from the deployed `inventory-feed-processor` function. You can do this via the [Functions UI](https://www.stedi.com/terminal/functions/inventory-feed-processor), or by re-running `npm run deploy`.
