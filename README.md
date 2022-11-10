@@ -117,58 +117,61 @@ Once deployed, the function will be invoked when files are written to the SFTP b
 
 1. Look for the output of the function wherever you created your test webhook! The function sends the inventory feed in JSON format
 
-    JSON Mapping output:
+    example JSON inventory feed output:
     ```json
     {
-      "orderAcknowledgements": [
+      "shop_1": [
         {
-          "orderAcknowledgementDetails": {
-            "internalOrderNumber": "ACME-4567",
-            "orderNumber": "365465413",
-            "orderDate": "2022-09-14",
-            "orderAckDate": "2022-09-13"
-          },
-          "seller": {
-            "name": "Marvin Acme",
-            "address": {
-              "street1": "123 Main Street",
-              "city": "Fairfield",
-              "state": "NJ",
-              "zip": "07004",
-              "country": "US"
-            }
-          },
-          "shipTo": {
-            "customerId": "DROPSHIP CUSTOMER",
-            "name": "Wile E Coyote",
-            "address": {
-              "street1": "111 Canyon Court",
-              "city": "Phoenix",
-              "state": "AZ",
-              "zip": "85001",
-              "country": "US"
-            }
-          },
-          "items": [
-            {
-              "id": "item-1",
-              "quantity": 8,
-              "unitCode": "EA",
-              "price": 400,
-              "vendorPartNumber": "VND1234567",
-              "sku": "ACM/8900-400"
-            },
-            {
-              "id": "item-2",
-              "quantity": 4,
-              "unitCode": "EA",
-              "price": 125,
-              "vendorPartNumber": "VND000111222",
-              "sku": "ACM/1100-001"
-            }
-          ]
+          "barcode": "0000000001498",
+          "quantity": "2",
+          "price": "0.00"
+        },
+        {
+          "barcode": "0000011167105",
+          "quantity": "4",
+          "price": "4.00"
+        },
+        {
+          "barcode": "0000900019441",
+          "quantity": "1",
+          "price": "5.00"
+        },
+        {
+          "barcode": "0602394031440",
+          "quantity": "0",
+          "price": "11.00"
+        },
+        {
+          "barcode": "0602394031587",
+          "quantity": "0",
+          "price": "11.00"
+        },
+        {
+          "barcode": "0602394036032",
+          "quantity": "0",
+          "price": "11.00"
+        },
+        {
+          "barcode": "0602394036223",
+          "quantity": "0",
+          "price": "11.00"
+        },
+        {
+          "barcode": "0658556032077",
+          "quantity": "1",
+          "price": "16.99"
+        },
+        {
+          "barcode": "0670983093988",
+          "quantity": "0",
+          "price": "8.99"
+        },
+        {
+          "barcode": "0717195239817",
+          "quantity": "1",
+          "price": "0.00"
         }
-      ] 
+      ]
     }
     ```
 
