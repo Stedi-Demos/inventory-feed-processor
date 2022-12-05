@@ -1,0 +1,5 @@
+Handle,Title,Option1 Name,Option1 Value,Option2 Name,Option2 Value,Option3 Name,Option3 Value,SKU,Quantity,Price
+anvil,Wrought Iron Anvil,Weight,100,,,,,ACM/8900-100,10,120
+anvil,Wrought Iron Anvil,Weight,250,,,,,ACM/8900-250,47,260
+anvil,Wrought Iron Anvil,Weight,400,,,,,ACM/8900-400,3,400
+detonator,Plunge TNT Detonator,Title,Plunge TNT Detonator,,,,,ACM/1100-001,110,125
