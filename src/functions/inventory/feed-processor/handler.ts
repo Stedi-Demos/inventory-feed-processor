@@ -34,8 +34,8 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
     const destinationWebhookUrl = requiredEnvVar("DESTINATION_WEBHOOK_URL");
 
     // Extract the object key from each record in the notification event, and split the keys into two groups:
-    // - filteredKeys:  keys that won't be processed (notifications for folders or objects not in an `inbound` directory)
-    // - keysToProcess: keys for objects in an `inbound` directory, which will be processed by the handler
+    // - filteredKeys:  keys that won't be processed (notifications for folders or objects not in an `inventory` directory)
+    // - keysToProcess: keys for objects in an `inventory` directory, which will be processed by the handler
     const groupedEventKeys = groupEventKeys(bucketNotificationEvent.Records);
     await trackProgress("grouped event keys", groupedEventKeys);
 
@@ -46,19 +46,21 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
       processedKeys: [],
     }
 
-    // Iterate through each key that represents an object within an `inbound` directory
+    // Iterate through each key that represents an object within an `inventory` directory
     for await (const keyToProcess of groupedEventKeys.keysToProcess) {
       const senderId = extractShopIdFromKey(keyToProcess.key);
       const getObjectResponse = await bucketsClient.send(new GetObjectCommand(keyToProcess));
       const fileContents = await consumers.text(getObjectResponse.body as Readable);
 
       try {
-        // TODO: detect file format (CSV/JSON) and process separately
-        // TODO: make `transformHeader` optional/configurable
+        // Demo conversion includes the following transformations of the headers from the input csv:
+        //  - transformed to lower case
+        //  - substrings of headers comprised of spaces and forward slashes replaced with an underscore
+        // Additional customization can be done to meet the needs of your inventory processing!
         const inventoryJson = convertCsvToJson(fileContents, {
           ...defaultCsvToJsonConversionOptions,
           transformHeader(header: string): string {
-            return header === "EAN" ? "barcode" : header.toLowerCase();
+            return header.toLowerCase().replace(/[ \/]+/g, "_");
           },
         });
 

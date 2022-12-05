@@ -113,7 +113,7 @@ Once deployed, the function will be invoked when files are written to the SFTP b
 
 1. Using the [Buckets UI](https://www.stedi.com/app/buckets) navigate to the `inventory` directory for your trading partner: `<SFTP_BUCKET_NAME>/trading_partners/shop_1/inventory`
 
-1. Upload an inventory feed CSV file to this directory. If you don't have an inventory feed CSV available, there is a sample feed that you can use: [feed.csv](/inventory-feeds/feed.csv).  (_note_: if you upload the document to the root directory `/`, it will be intentionally ignored by the `inventory-feed-processor` function)
+1. Upload an inventory feed CSV file to this directory. If you don't have an inventory feed CSV available, there is a sample feed that you can use: [shopify-feed.csv](/inventory-feeds/shopify-feed.csv).  (_note_: if you upload the document to the root directory `/`, it will be intentionally ignored by the `inventory-feed-processor` function)
 
 1. Look for the output of the function wherever you created your test webhook! The function sends the inventory feed in JSON format
 
