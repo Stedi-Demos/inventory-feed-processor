@@ -67,7 +67,15 @@ As the illustration below shows, the `inventory-feed-processor` function perform
    SFTP_BUCKET_NAME=4c22f54a-9ecf-41c8-b404-6a1f20674953-sftp
    EXECUTIONS_BUCKET_NAME=4c22f54a-9ecf-41c8-b404-6a1f20674953-executions
    ```
-   
+
+1. Create the Stash Keyspace to store inventory data:
+
+   ```bash
+   npm run create-keyspace
+   ```
+
+   The Stash Keyspace is used to store inventory data that has been processed. In this demo, the inventory feed data must contain `sku`, `quantity`, and `price` attributes in order to be processed successfully.
+
 1. Confirm that your `.env` file contains the necessary environment variables: 
    - `STEDI_API_KEY` 
    - `DESTINATION_WEBHOOK_URL`
@@ -113,7 +121,7 @@ Once deployed, the function will be invoked when files are written to the SFTP b
 
 1. Using the [Buckets UI](https://www.stedi.com/app/buckets) navigate to the `inventory` directory for your trading partner: `<SFTP_BUCKET_NAME>/trading_partners/shop_1/inventory`
 
-1. Upload an inventory feed CSV file to this directory. If you don't have an inventory feed CSV available, there is a sample feed that you can use: [feed.csv](/inventory-feeds/feed.csv).  (_note_: if you upload the document to the root directory `/`, it will be intentionally ignored by the `inventory-feed-processor` function)
+1. Upload an inventory feed CSV file to this directory. If you don't have an inventory feed CSV available, there is a sample feed that you can use: [sample-feed.csv](/inventory-feeds/sample-feed.csv).  In order to be successfully processed and sent to the Stash inventory data store, each inventory item in the input CSV must minimally have a `sku`, a `price`, and a `quantity` attribute. (_note_: if you upload the document to the root directory `/`, it will be intentionally ignored by the `inventory-feed-processor` function)
 
 1. Look for the output of the function wherever you created your test webhook! The function sends the inventory feed in JSON format
 
@@ -122,58 +130,62 @@ Once deployed, the function will be invoked when files are written to the SFTP b
     {
       "shop_1": [
         {
-          "barcode": "0000000001498",
-          "quantity": "2",
-          "price": "0.00"
+          "handle": "anvil",
+          "title": "Wrought Iron Anvil",
+          "option1_name": "Weight",
+          "option1_value": "100",
+          "option2_name": "",
+          "option2_value": "",
+          "option3_name": "",
+          "option3_value": "",
+          "sku": "ACM/8900-100",
+          "quantity": "10",
+          "price": "120"
         },
         {
-          "barcode": "0000011167105",
-          "quantity": "4",
-          "price": "4.00"
+          "handle": "anvil",
+          "title": "Wrought Iron Anvil",
+          "option1_name": "Weight",
+          "option1_value": "250",
+          "option2_name": "",
+          "option2_value": "",
+          "option3_name": "",
+          "option3_value": "",
+          "sku": "ACM/8900-250",
+          "quantity": "47",
+          "price": "260"
         },
         {
-          "barcode": "0000900019441",
-          "quantity": "1",
-          "price": "5.00"
+          "handle": "anvil",
+          "title": "Wrought Iron Anvil",
+          "option1_name": "Weight",
+          "option1_value": "400",
+          "option2_name": "",
+          "option2_value": "",
+          "option3_name": "",
+          "option3_value": "",
+          "sku": "ACM/8900-400",
+          "quantity": "3",
+          "price": "400"
         },
         {
-          "barcode": "0602394031440",
-          "quantity": "0",
-          "price": "11.00"
-        },
-        {
-          "barcode": "0602394031587",
-          "quantity": "0",
-          "price": "11.00"
-        },
-        {
-          "barcode": "0602394036032",
-          "quantity": "0",
-          "price": "11.00"
-        },
-        {
-          "barcode": "0602394036223",
-          "quantity": "0",
-          "price": "11.00"
-        },
-        {
-          "barcode": "0658556032077",
-          "quantity": "1",
-          "price": "16.99"
-        },
-        {
-          "barcode": "0670983093988",
-          "quantity": "0",
-          "price": "8.99"
-        },
-        {
-          "barcode": "0717195239817",
-          "quantity": "1",
-          "price": "0.00"
+          "handle": "detonator",
+          "title": "Plunge TNT Detonator",
+          "option1_name": "Title",
+          "option1_value": "Plunge TNT Detonator",
+          "option2_name": "",
+          "option2_value": "",
+          "option3_name": "",
+          "option3_value": "",
+          "sku": "ACM/1100-001",
+          "quantity": "110",
+          "price": "125"
         }
       ]
     }
     ```
+ 
+1. Look at the inventory data in [Stash](https://www.stedi.com/app/stash/keyspace/inventory-data) (note that the items use the `sku` as the key, and only the `quantity`, and `price` attributes are persisted to Stash in the demo handler)
 
 1. [Optional -- Bonus / Extra Credit] Try invoking the workflow via SFTP!
    1. Provision an SFTP user, by visiting the [SFTP Web UI](https://www.stedi.com/app/sftp), be sure to set its `Home directory` to `/trading_partners/shop_1` and record the password (it will not be shown again)

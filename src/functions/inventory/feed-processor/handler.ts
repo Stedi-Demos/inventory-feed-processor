@@ -4,6 +4,7 @@ import { Readable } from "stream";
 import { serializeError } from "serialize-error";
 
 import { DeleteObjectCommand, GetObjectCommand } from "@stedi/sdk-client-buckets";
+import { GetValueCommand, SetValueCommand, StashClient } from "@stedi/sdk-client-stash";
 
 import {
   failedExecution,
@@ -17,10 +18,15 @@ import { bucketClient } from "../../../lib/buckets.js";
 import { FilteredKey, GroupedEventKeys, KeyToProcess, ProcessingResults } from "./types.js";
 import { requiredEnvVar } from "../../../lib/environment.js";
 import { trackProgress } from "../../../lib/progressTracking.js";
-import { convertCsvToJson, defaultCsvToJsonConversionOptions } from "../../../lib/converter";
+import { convertCsvToJson, defaultCsvToJsonConversionOptions } from "../../../lib/converter.js";
+import { DEFAULT_SDK_CLIENT_PROPS, INVENTORY_DATA_STASH_KEYSPACE_NAME } from "../../../lib/constants.js";
+
+const stashClient = new StashClient(DEFAULT_SDK_CLIENT_PROPS);
 
 // Buckets client is shared across handler and execution tracking logic
 const bucketsClient = bucketClient();
+
+const requiredInventoryItemAttributes = ["sku", "quantity", "price"];
 
 export const handler = async (event: any): Promise<Record<string, any>> => {
   const executionId = generateExecutionId(event);
@@ -34,8 +40,8 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
     const destinationWebhookUrl = requiredEnvVar("DESTINATION_WEBHOOK_URL");
 
     // Extract the object key from each record in the notification event, and split the keys into two groups:
-    // - filteredKeys:  keys that won't be processed (notifications for folders or objects not in an `inbound` directory)
-    // - keysToProcess: keys for objects in an `inbound` directory, which will be processed by the handler
+    // - filteredKeys:  keys that won't be processed (notifications for folders or objects not in an `inventory` directory)
+    // - keysToProcess: keys for objects in an `inventory` directory, which will be processed by the handler
     const groupedEventKeys = groupEventKeys(bucketNotificationEvent.Records);
     await trackProgress("grouped event keys", groupedEventKeys);
 
@@ -46,19 +52,21 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
       processedKeys: [],
     }
 
-    // Iterate through each key that represents an object within an `inbound` directory
+    // Iterate through each key that represents an object within an `inventory` directory
     for await (const keyToProcess of groupedEventKeys.keysToProcess) {
       const senderId = extractShopIdFromKey(keyToProcess.key);
       const getObjectResponse = await bucketsClient.send(new GetObjectCommand(keyToProcess));
       const fileContents = await consumers.text(getObjectResponse.body as Readable);
 
       try {
-        // TODO: detect file format (CSV/JSON) and process separately
-        // TODO: make `transformHeader` optional/configurable
+        // Demo conversion includes the following transformations of the headers from the input csv:
+        //  - transformed to lower case
+        //  - spaces replaced with underscores
+        // Additional customization can be done to meet the needs of your inventory processing!
         const inventoryJson = convertCsvToJson(fileContents, {
           ...defaultCsvToJsonConversionOptions,
           transformHeader(header: string): string {
-            return header === "EAN" ? "barcode" : header.toLowerCase();
+            return header.toLowerCase().replace(/ +/g, "_");
           },
         });
 
@@ -75,7 +83,45 @@ export const handler = async (event: any): Promise<Record<string, any>> => {
           }
         );
 
-        // TODO: optionally send inventory feed to stash
+        const skippedInventoryItems: string[] = [];
+        await Promise.all(inventoryJson.map(async (item: any) => {
+          // Skip items that don't have all required attributes
+          if (requiredInventoryItemAttributes.some((attribute) => !item.hasOwnProperty(attribute))) {
+            skippedInventoryItems.push(item);
+            return;
+          }
+
+          // Load existing inventory data for item sku (to support multiple vendors per sku)
+          const existingInventoryForSku = await stashClient.send(
+            new GetValueCommand({ key: item.sku, keyspaceName: INVENTORY_DATA_STASH_KEYSPACE_NAME })
+          );
+
+          // Merge with existing inventory data, if present
+          const value = {
+            ...((existingInventoryForSku.value as object) ?? {}),
+            [senderId]: {
+              price: item.price,
+              quantity: item.quantity,
+            },
+          }
+
+          // Persist updated inventory data item
+          await stashClient.send(
+            new SetValueCommand({ key: item.sku, value, keyspaceName: INVENTORY_DATA_STASH_KEYSPACE_NAME })
+          );
+        }));
+
+        // Mark inventory file processing as unsuccessful if any items were skipped
+        if (skippedInventoryItems.length > 0) {
+          const message = "inventory item(s) skipped due to missing required attributes";
+          await trackProgress(message, { key: keyToProcess.key, skippedInventoryItems });
+          results.processingErrors.push({
+            key: keyToProcess.key,
+            error: new Error(message),
+          });
+
+          continue;
+        }
 
         // Delete the processed file (could also archive in a `processed` directory or in another bucket if desired)
         await bucketsClient.send(new DeleteObjectCommand(keyToProcess));
